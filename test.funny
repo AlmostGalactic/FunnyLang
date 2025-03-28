@@ -1,8 +1,11 @@
 "./Libraries/std.funny" attach
-var Name
+var Counter
 
 func main
-	10 "Name" set
-	Name 1 - "Name" set
-	Name print
+	10 "Counter" set
+	true while
+		Counter print
+		Counter 1 - "Counter" set
+		Counter -1 >
+	end
 end 

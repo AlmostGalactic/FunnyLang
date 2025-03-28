@@ -2,7 +2,11 @@ from lexer import *
 from keywords import *
 
 def isNum(x):
-    return str(x).replace('.', '', 1).isdigit()
+    try:
+        float(x)
+        return True
+    except ValueError:
+        return False
 
 def isStr(x):
     return str(x).startswith('"') and x.endswith('"')
