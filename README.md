@@ -54,4 +54,23 @@ else 2 1 1 + = if
 end
 ```
 
-Im to lazy to do the rest so look at the code yourself, bye!
+you can also make variables
+
+```
+var (varname)
+```
+
+Here is a little program that asks for a name and sets a variable to it
+
+```
+"./Libraries/std.funny" attach
+var Name
+
+func main
+	"What is your name?" print input
+	"Name" set
+	Name print
+end
+```
+
+I'm to lazy to do the rest so look at the code yourself, bye!
