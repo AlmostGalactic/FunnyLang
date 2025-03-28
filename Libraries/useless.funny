@@ -6,8 +6,8 @@ func trial-and-error
 		"true" print
 	else
 		"false" print
-		"Enter a number to add" print pop input
-		"Enter another number" print pop input
+		"Enter a number to add" print input
+		"Enter another number" print input
 		+ print
 	end
 end 

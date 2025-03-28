@@ -1,5 +1,5 @@
-"./Libraries/std.funny" attach
+"./Libraries/useless.funny" attach
 
 func main
-	2 1 1 + = print
+	trial-and-error
 end 
