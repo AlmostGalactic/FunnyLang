@@ -11,7 +11,7 @@ this is a simple hello world
 "./Libraries/std.funny" attach
 
 func main
-  "Hello, World!" pop
+  "Hello, World!" print
 end
 ```
 
