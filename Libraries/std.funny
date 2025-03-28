@@ -2,6 +2,14 @@ func print
 	write "\n" write
 end
 
+func false
+	0
+end
+
+func true
+	1
+end
+
 func add
     +
 end
@@ -38,3 +46,7 @@ func even
   2 %
   0 =
 end 
+
+func set
+	@
+end

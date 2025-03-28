@@ -31,6 +31,8 @@ POP = iota()
 ROLL = iota()
 MOD = iota()
 ELSE = iota()
+VAR = iota()
+SET_VAR = iota()
 
 def write():
     return (WRITE,)
@@ -78,3 +80,7 @@ def mod():
     return (MOD,)
 def elsee():
     return (ELSE,)
+def var():
+    return (VAR,)
+def set_var():
+    return (SET_VAR,)

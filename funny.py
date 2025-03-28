@@ -30,6 +30,8 @@ def parse_token_as_op(token):
         return end()
     elif word == "=":
         return equal()
+    elif word == "@":
+        return set_var()
     elif word == "<":
         return lt()
     elif word == ">":
@@ -52,6 +54,8 @@ def parse_token_as_op(token):
         return roll()
     elif word == "else":
         return elsee()
+    elif word == "var":
+        return var()
     else:
         if isNum(word):
             return push(word)
@@ -96,9 +100,10 @@ def get_block_code(program, start, end):
         ip += 1
     return code
 
-def run_program(stack=[], program=[], func={}, get_funcs=False):
+def run_program(stack=[], program=[], func={}, get_funcs=False, vars = {}, return_vars=False):
     ip = 0
     functions = func.copy()
+    variables = vars
     while ip < len(program):
         op = program[ip]
         if op[0] == PLUS and (not get_funcs):
@@ -209,20 +214,37 @@ def run_program(stack=[], program=[], func={}, get_funcs=False):
             func_code = get_block_code(program, func_code_start, func_ip_end)
             functions[func_name] = func_code
             ip = func_ip_end
+        elif op[0] == VAR:
+            ip += 1
+            var_name = program[ip][1]
+            variables[var_name] = 0
+        elif op[0] == SET_VAR:
+            var_name = stack.pop()
+            var_value = stack.pop()
+            
+            if var_name in variables:
+                variables[var_name] = var_value
+            else:
+                assert False, f"Unknown variable name: {var_name}"
         elif not get_funcs:
             if op[1] in functions:
                 run_program(stack, functions[op[1]], functions)
+            elif op[1] in variables:
+                stack.append(variables[op[1]])
             else:
                 assert False, f"Unknown word: {op[1]}"
         ip += 1
-    return functions
+    if return_vars:
+        return functions, variables
+    else:
+        return functions
 
 def simulate_program(program):
     stack = []
     functions = {}
-    functions = run_program(stack, program, functions, True)
+    functions, variables = run_program(stack, program, functions, True, return_vars=True)
     if "main" in functions:
-        run_program(program=functions["main"], func=functions)
+        run_program(program=functions["main"], func=functions, vars=variables)
 
 if __name__ == "__main__":
     import sys

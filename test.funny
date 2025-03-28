@@ -1,5 +1,8 @@
-"./Libraries/useless.funny" attach
+"./Libraries/std.funny" attach
+var Name
 
 func main
-	trial-and-error
+	10 "Name" set
+	Name 1 - "Name" set
+	Name print
 end 
