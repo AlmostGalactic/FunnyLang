@@ -1,0 +1,40 @@
+func print
+	write "\n" write
+end
+
+func add
+    +
+end
+
+func sub
+    -
+end
+
+func mult
+    *
+end
+
+func div
+    /
+end
+
+func roll
+    :
+end
+
+func square
+  dup *
+end
+
+func double
+  dup +
+end
+
+func odd
+  even not
+end
+
+func even
+  2 %
+  0 =
+end 
