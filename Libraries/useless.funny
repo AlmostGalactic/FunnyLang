@@ -22,3 +22,37 @@ func truth-machine
 		0 print
 	end
 end 
+
+func number-guessing-game
+	var number
+	var guesses
+
+
+	33 "number" set
+	
+	true while
+		pop
+		guesses 1 + "guesses" set
+		"Guess a number between 1 and 100" print input
+		"guess" set
+		
+		guess number < if
+			"To low!" print
+		else guess number > if
+			"To high!" print
+			end
+		end
+		
+		guess number < if
+			1
+		else
+			guess number > if
+				1
+			else
+				0
+			end
+		end
+	end
+	
+	"Nice! You did it!" print
+end 
