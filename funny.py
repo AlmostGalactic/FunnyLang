@@ -1,6 +1,33 @@
 from lexer import *
 from keywords import *
 
+class Environment:
+    def __init__(self, parent=None):
+        self.vars = {}
+        self.parent = parent
+
+    def define(self, name, value=0):
+        # Called when we see `var <name>`
+        self.vars[name] = value
+
+    def get(self, name):
+        # Look up variable in this env or parent
+        if name in self.vars:
+            return self.vars[name]
+        if self.parent is not None:
+            return self.parent.get(name)
+        raise Exception(f"Unknown variable: {name}")
+
+    def set(self, name, value):
+        # Search for existing var in chain of environments
+        if name in self.vars:
+            self.vars[name] = value
+        elif self.parent is not None:
+            self.parent.set(name, value)
+        else:
+            # If not found in parents, create new variable in current scope
+            self.vars[name] = value
+
 def isNum(x):
     try:
         float(x)
@@ -73,26 +100,21 @@ def codeblock(program, start, useElse=False):
 def get_block_code(program, start, end):
     return program[start:end]
 
-def run_program(stack=[], program=[], func={}, get_funcs=False, vars={}, return_vars=False, scope=False, parent_scope=None, is_if_block=False):
+def run_program(stack=None, program=None, func=None,
+                get_funcs=False, env=None, return_vars=False,
+                is_if_block=False):
+    if stack is None:
+        stack = []
+    if program is None:
+        program = []
+    if func is None:
+        func = {}
+    if env is None:
+        # Global environment if not provided
+        env = Environment()
+
     ip = 0
     functions = func.copy()
-    
-    # Create proper scope chain
-    # For if statements, use the parent scope directly (no new scope)
-    if is_if_block:
-        local_vars = parent_scope
-        parent = None
-    # For other blocks with scope, create a new local scope dictionary
-    elif scope:
-        local_vars = {}
-        parent = parent_scope if parent_scope is not None else vars
-    else:
-        # Global scope
-        local_vars = vars
-        parent = None
-    
-    # Track variables that are declared in this scope (not needed for if blocks)
-    scope_declarations = set() if not is_if_block else None
 
     while ip < len(program):
         op = program[ip]
@@ -145,12 +167,15 @@ def run_program(stack=[], program=[], func={}, get_funcs=False, vars={}, return_
             if condition:
                 true_end = else_ip if else_ip != 0 else end_ip
                 true_block = get_block_code(program, ip + 1, true_end)
-                # Pass the current scope directly - no new scope for if blocks
-                run_program(stack, true_block, functions, vars=vars, is_if_block=True, parent_scope=local_vars)
+
+                # CHANGED HERE: We reuse 'env' instead of creating if_env
+                run_program(stack, true_block, functions, env=env)
             elif else_ip != 0:
                 false_block = get_block_code(program, else_ip + 1, end_ip)
-                # Pass the current scope directly - no new scope for if blocks
-                run_program(stack, false_block, functions, vars=vars, is_if_block=True, parent_scope=local_vars)
+                
+                # CHANGED HERE: We reuse 'env'
+                run_program(stack, false_block, functions, env=env)
+
             ip = end_ip
 
         elif op[0] == NOT and not get_funcs:
@@ -181,7 +206,8 @@ def run_program(stack=[], program=[], func={}, get_funcs=False, vars={}, return_
         elif op[0] == ATTACH:
             attachment = stack.pop()
             attachment_program = load_program_from_file(str(attachment))
-            attachment_funcs = run_program(stack, attachment_program, functions, get_funcs=True)
+            attachment_funcs = run_program(stack, attachment_program, functions,
+                                           get_funcs=True, env=env)
             functions.update(attachment_funcs)
 
         elif op[0] == POP and not get_funcs:
@@ -199,6 +225,9 @@ def run_program(stack=[], program=[], func={}, get_funcs=False, vars={}, return_
             while_ip = ip
             while_end_ip = codeblock(program, while_ip)
             while_program = get_block_code(program, while_ip + 1, while_end_ip)
+
+            # Create new environment for the while block
+            while_env = Environment(parent=env)
             while True:
                 if not stack:
                     break
@@ -206,8 +235,8 @@ def run_program(stack=[], program=[], func={}, get_funcs=False, vars={}, return_
                 if condition == 0:
                     ip = while_end_ip
                     break
-                # Create a new scope for while loops
-                run_program(stack, while_program, functions, vars=vars, scope=True, parent_scope=local_vars)
+                run_program(stack, while_program, functions, env=while_env)
+            # after the while loop, we jump here
 
         elif op[0] == FUNC:
             func_name = program[ip + 1][1]
@@ -220,56 +249,40 @@ def run_program(stack=[], program=[], func={}, get_funcs=False, vars={}, return_
         elif op[0] == VAR:
             ip += 1
             var_name = program[ip][1]
-            # Add variable to local scope
-            local_vars[var_name] = 0
-            # Track declaration only if we're tracking (not in if blocks)
-            if scope_declarations is not None:
-                scope_declarations.add(var_name)
+            env.define(var_name, 0)
 
         elif op[0] == SET_VAR and not get_funcs:
             var_name = stack.pop()
             var_value = stack.pop()
-            
-            # If we're in an if block or this is a global var
-            if is_if_block or not scope:
-                local_vars[var_name] = var_value
-            # If variable was declared in this scope, update it
-            elif var_name in local_vars:
-                local_vars[var_name] = var_value
-            # If we're in a scoped block and it's a parent variable
-            elif parent is not None and var_name in parent:
-                parent[var_name] = var_value
-            else:
-                # Variable doesn't exist anywhere in scope chain, create locally
-                local_vars[var_name] = var_value
-                if scope_declarations is not None:
-                    scope_declarations.add(var_name)
+            env.set(var_name, var_value)
 
         elif op[0] == WORD and not get_funcs:
             word = op[1]
             if word in functions:
-                # Execute function
-                run_program(stack, functions[word], functions, vars=vars, scope=True, parent_scope=local_vars)
-            # First check local vars
-            elif word in local_vars:
-                stack.append(local_vars[word])
-            # Then check parent scope (only if in a nested scope)
-            elif not is_if_block and scope and parent is not None and word in parent:
-                stack.append(parent[word])
+                # create environment for function execution
+                func_env = Environment(parent=env)
+                run_program(stack, functions[word], functions, env=func_env)
             else:
-                raise Exception(f"Unknown word: {word}")
-        
+                # treat as variable
+                val = env.get(word)
+                stack.append(val)
         ip += 1
 
-    # Return both functions and variables if requested
-    return (functions, vars) if return_vars else functions
+    if return_vars:
+        # return the entire environment's dictionary plus function references
+        return (functions, env.vars)
+    else:
+        return functions
 
 def simulate_program(program):
     stack = []
     functions = {}
-    functions, variables = run_program(stack, program, functions, get_funcs=True, return_vars=True)
+    global_env = Environment()
+    functions, variables = run_program(stack=stack, program=program,
+                                       func=functions, get_funcs=True,
+                                       env=global_env, return_vars=True)
     if "main" in functions:
-        run_program(program=functions["main"], func=functions, vars=variables)
+        run_program(program=functions["main"], func=functions, env=global_env)
 
 if __name__ == "__main__":
     import sys

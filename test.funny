@@ -1,18 +1,5 @@
 "./Libraries/useless.funny" attach
 
 func main
-	
-	var test
-	1 "test" set
-	
-	//tests out new scope feature
-	
-	1 while
-		var test2
-		123 "test2" set
-		pop test print 0
-		test2 print
-	end
-	
-	//test2 print
+	15 -2 pow print
 end 
