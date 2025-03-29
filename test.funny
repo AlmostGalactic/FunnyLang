@@ -1,11 +1,18 @@
-"./Libraries/std.funny" attach
-var Counter
+"./Libraries/useless.funny" attach
 
 func main
-	10 "Counter" set
-	true while
-		Counter print
-		Counter 1 - "Counter" set
-		Counter -1 >
+	
+	var test
+	1 "test" set
+	
+	//tests out new scope feature
+	
+	1 while
+		var test2
+		123 "test2" set
+		pop test print 0
+		test2 print
 	end
+	
+	//test2 print
 end 
