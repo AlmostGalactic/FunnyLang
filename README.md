@@ -185,7 +185,7 @@ var counter
 
 1 while 	   // 1 is just there to get the while loop started, it will get remove in the loop and replaced with the condition
     pop            // pop the condition check so it doesn't clutter the stack
-    "counter"      // push current value of counter
+    counter      // push current value of counter
     1 -            // subtract 1
     "counter" @    // set new value to counter
 
